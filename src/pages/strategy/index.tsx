@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text, ScrollView, Input, Switch } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
@@ -7,8 +7,17 @@ import { mockStrategies } from '@/data/strategy';
 import { Strategy } from '@/types';
 import { formatMoney } from '@/utils';
 
+type ConfigField = 'maxPeakPower' | 'autoAdjust' | 
+  'chargeStartTime' | 'chargeEndTime' | 'dischargeStartTime' | 'dischargeEndTime' | 'minBattery' | 'maxBattery' |
+  'autoDetect' | 'turnOffAc' | 'turnOffWater' | 'keepBattery' |
+  'summerTemp' | 'winterTemp' | 'tempAutoAdjust' | 'humidityControl';
+
 const StrategyPage: React.FC = () => {
   const [strategies, setStrategies] = useState<Strategy[]>(mockStrategies);
+  const [showModal, setShowModal] = useState(false);
+  const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
+  
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   const enabledCount = strategies.filter(s => s.enabled).length;
   const estimatedMonthlySaving = strategies
@@ -44,15 +53,148 @@ const StrategyPage: React.FC = () => {
 
   const handleStrategyClick = (strategy: Strategy) => {
     console.log('[Strategy] Click strategy:', strategy.name);
+    openConfigModal(strategy);
+  };
+
+  const openConfigModal = (strategy: Strategy) => {
+    setEditingStrategy(strategy);
+    
+    const config = strategy.config || {};
+    const defaults: Record<string, any> = {};
+    
+    switch (strategy.type) {
+      case 'peak_shaving':
+        defaults.maxPeakPower = config.maxPeakPower || 3000;
+        defaults.autoAdjust = config.autoAdjust !== false;
+        break;
+      case 'battery_charge':
+        defaults.chargeStartTime = config.chargeStartTime || '00:00';
+        defaults.chargeEndTime = config.chargeEndTime || '06:00';
+        defaults.dischargeStartTime = config.dischargeStartTime || '08:00';
+        defaults.dischargeEndTime = config.dischargeEndTime || '11:00';
+        defaults.minBattery = config.minBatteryLevel || 20;
+        defaults.maxBattery = config.maxBatteryLevel || 90;
+        break;
+      case 'away_mode':
+        defaults.autoDetect = config.autoDetect || false;
+        const devices = config.turnOffDevices || [];
+        defaults.turnOffAc = devices.includes('ac');
+        defaults.turnOffWater = devices.includes('water_heater');
+        defaults.keepBattery = config.keepBattery !== false;
+        break;
+      case 'comfort_temp':
+        defaults.summerTemp = config.summerTemp || 26;
+        defaults.winterTemp = config.winterTemp || 22;
+        defaults.tempAutoAdjust = config.autoAdjust !== false;
+        defaults.humidityControl = config.humidityControl || false;
+        break;
+    }
+    
+    setFormData(defaults);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingStrategy(null);
+    setFormData({});
+  };
+
+  const handleSave = () => {
+    if (!editingStrategy) return;
+    console.log('[Strategy] Save config for:', editingStrategy.name, formData);
+
+    let newConfig: Record<string, any> = {};
+    
+    switch (editingStrategy.type) {
+      case 'peak_shaving':
+        newConfig = {
+          maxPeakPower: parseInt(formData.maxPeakPower) || 3000,
+          autoAdjust: !!formData.autoAdjust
+        };
+        break;
+      case 'battery_charge':
+        newConfig = {
+          chargeStartTime: formData.chargeStartTime || '00:00',
+          chargeEndTime: formData.chargeEndTime || '06:00',
+          dischargeStartTime: formData.dischargeStartTime || '08:00',
+          dischargeEndTime: formData.dischargeEndTime || '11:00',
+          minBatteryLevel: parseInt(formData.minBattery) || 20,
+          maxBatteryLevel: parseInt(formData.maxBattery) || 90
+        };
+        break;
+      case 'away_mode':
+        const devices: string[] = [];
+        if (formData.turnOffAc) devices.push('ac');
+        if (formData.turnOffWater) devices.push('water_heater');
+        newConfig = {
+          autoDetect: !!formData.autoDetect,
+          turnOffDevices: devices,
+          keepBattery: !!formData.keepBattery
+        };
+        break;
+      case 'comfort_temp':
+        newConfig = {
+          summerTemp: parseInt(formData.summerTemp) || 26,
+          winterTemp: parseInt(formData.winterTemp) || 22,
+          autoAdjust: !!formData.tempAutoAdjust,
+          humidityControl: !!formData.humidityControl
+        };
+        break;
+    }
+
+    setStrategies(prev =>
+      prev.map(s => {
+        if (s.id === editingStrategy.id) {
+          return { ...s, config: newConfig };
+        }
+        return s;
+      })
+    );
+
+    Taro.showToast({
+      title: '配置已保存',
+      icon: 'success',
+      duration: 1500
+    });
+
+    closeModal();
+  };
+
+  const handleSwitchChange = (key: string, value: boolean) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleInputChange = (key: string, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleTimeSelect = (key: string) => {
+    const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     Taro.showActionSheet({
-      itemList: ['策略设置', '查看效果', '使用说明'],
+      itemList: hours,
       success: (res) => {
-        console.log('[Strategy] Selected option:', res.tapIndex);
-        Taro.showToast({
-          title: '功能开发中',
-          icon: 'none',
-          duration: 1500
-        });
+        handleInputChange(key, hours[res.tapIndex]);
+      }
+    });
+  };
+
+  const handleTempSelect = (key: string, options: number[]) => {
+    const labels = options.map(t => `${t}°C`);
+    Taro.showActionSheet({
+      itemList: labels,
+      success: (res) => {
+        handleInputChange(key, String(options[res.tapIndex]));
+      }
+    });
+  };
+
+  const handleBatterySelect = (key: string, options: number[]) => {
+    const labels = options.map(t => `${t}%`);
+    Taro.showActionSheet({
+      itemList: labels,
+      success: (res) => {
+        handleInputChange(key, String(options[res.tapIndex]));
       }
     });
   };
@@ -100,6 +242,10 @@ const StrategyPage: React.FC = () => {
           label: '放电时段', 
           value: `${strategy.config?.dischargeStartTime || '--'} - ${strategy.config?.dischargeEndTime || '--'}` 
         });
+        configs.push({
+          label: '电池范围',
+          value: `${strategy.config?.minBatteryLevel || 20}% - ${strategy.config?.maxBatteryLevel || 90}%`
+        });
         break;
       case 'away_mode':
         configs.push({ 
@@ -110,6 +256,10 @@ const StrategyPage: React.FC = () => {
           label: '关闭设备', 
           value: strategy.config?.turnOffDevices?.length ? `${strategy.config.turnOffDevices.length}类` : '--' 
         });
+        configs.push({
+          label: '保留储能',
+          value: strategy.config?.keepBattery !== false ? '是' : '否'
+        });
         break;
       case 'comfort_temp':
         configs.push({ 
@@ -119,6 +269,10 @@ const StrategyPage: React.FC = () => {
         configs.push({ 
           label: '冬季温度', 
           value: strategy.config?.winterTemp ? `${strategy.config.winterTemp}°C` : '--' 
+        });
+        configs.push({
+          label: '智能调节',
+          value: strategy.config?.autoAdjust !== false ? '开启' : '关闭'
         });
         break;
     }
@@ -136,73 +290,261 @@ const StrategyPage: React.FC = () => {
     return savings[type] || '';
   };
 
-  return (
-    <ScrollView className={styles.page} scrollY>
-      <View className={styles.headerCard}>
-        <Text className={styles.headerTitle}>智能节能策略</Text>
-        <Text className={styles.headerDesc}>
-          开启智能策略，系统将根据您的用电习惯和电价时段，自动优化设备运行，帮您节省电费。
-        </Text>
-        <View className={styles.headerStats}>
-          <View className={styles.headerStat}>
-            <Text className={styles.statValue}>{enabledCount}/{strategies.length}</Text>
-            <Text className={styles.statLabel}>已开启策略</Text>
-          </View>
-          <View className={styles.headerStat}>
-            <Text className={styles.statValue}>¥{estimatedMonthlySaving}</Text>
-            <Text className={styles.statLabel}>预计月省</Text>
-          </View>
-        </View>
-      </View>
+  const renderConfigForm = () => {
+    if (!editingStrategy) return null;
+    const type = editingStrategy.type;
 
-      <Text className={styles.sectionTitle}>策略列表</Text>
+    return (
+      <View>
+        {type === 'peak_shaving' && (
+          <>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>峰时最大功率 (W)</Text>
+              <Input
+                className={styles.formInput}
+                type='number'
+                value={String(formData.maxPeakPower || '')}
+                onInput={(e) => handleInputChange('maxPeakPower', e.detail.value)}
+                style={{ width: '180rpx', textAlign: 'right' }}
+              />
+            </View>
+            <View style={{ marginTop: '8rpx' }}>
+              {[2000, 3000, 4000, 5000].map(p => (
+                <Text
+                  key={p}
+                  className={classnames(styles.tagBtn, parseInt(formData.maxPeakPower) === p && styles.tagBtnActive)}
+                  onClick={() => handleInputChange('maxPeakPower', String(p))}
+                >
+                  {p}W
+                </Text>
+              ))}
+            </View>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>自动调节设备</Text>
+              <Switch
+                checked={!!formData.autoAdjust}
+                onChange={(e) => handleSwitchChange('autoAdjust', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+          </>
+        )}
 
-      <View className={styles.strategyList}>
-        {strategies.map(strategy => (
-          <View
-            key={strategy.id}
-            className={classnames(styles.strategyCard, !strategy.enabled && styles.disabled)}
-            onClick={() => handleStrategyClick(strategy)}
-          >
-            <View className={styles.strategyHeader}>
-              <View className={classnames(styles.strategyIcon, styles[getStrategyTypeClass(strategy.type)])}>
-                {getStrategyIcon(strategy.type)}
-              </View>
-              <View className={styles.strategyInfo}>
-                <Text className={styles.strategyName}>{strategy.name}</Text>
-                <Text className={styles.strategyDesc}>{strategy.description}</Text>
-                {strategy.enabled && (
-                  <Text className={styles.effectTag}>{getSavingText(strategy.type)}</Text>
-                )}
-              </View>
-              <View
-                className={classnames(styles.switchBtn, strategy.enabled && styles.active)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggle(strategy);
-                }}
-              >
-                <View className={styles.switchDot} />
+        {type === 'battery_charge' && (
+          <>
+            <View className={styles.formRow} onClick={() => handleTimeSelect('chargeStartTime')}>
+              <Text className={styles.formLabel}>充电开始时间</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.chargeStartTime}</Text>
+                <Text className={styles.formArrow}>›</Text>
               </View>
             </View>
-
-            {strategy.enabled && (
-              <View className={styles.strategyConfig}>
-                {getConfigDisplay(strategy).map((config, index) => (
-                  <View key={index} className={styles.configRow}>
-                    <Text className={styles.configLabel}>{config.label}</Text>
-                    <View style={{ display: 'flex', alignItems: 'center' }}>
-                      <Text className={styles.configValue}>{config.value}</Text>
-                      <Text className={styles.configArrow}>›</Text>
-                    </View>
-                  </View>
-                ))}
+            <View className={styles.formRow} onClick={() => handleTimeSelect('chargeEndTime')}>
+              <Text className={styles.formLabel}>充电结束时间</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.chargeEndTime}</Text>
+                <Text className={styles.formArrow}>›</Text>
               </View>
-            )}
-          </View>
-        ))}
+            </View>
+            <View className={styles.formRow} onClick={() => handleTimeSelect('dischargeStartTime')}>
+              <Text className={styles.formLabel}>放电开始时间</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.dischargeStartTime}</Text>
+                <Text className={styles.formArrow}>›</Text>
+              </View>
+            </View>
+            <View className={styles.formRow} onClick={() => handleTimeSelect('dischargeEndTime')}>
+              <Text className={styles.formLabel}>放电结束时间</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.dischargeEndTime}</Text>
+                <Text className={styles.formArrow}>›</Text>
+              </View>
+            </View>
+            <View className={styles.formRow} onClick={() => handleBatterySelect('minBattery', [10, 15, 20, 25, 30])}>
+              <Text className={styles.formLabel}>最小电量</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.minBattery}%</Text>
+                <Text className={styles.formArrow}>›</Text>
+              </View>
+            </View>
+            <View className={styles.formRow} onClick={() => handleBatterySelect('maxBattery', [80, 85, 90, 95, 100])}>
+              <Text className={styles.formLabel}>最大电量</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.maxBattery}%</Text>
+                <Text className={styles.formArrow}>›</Text>
+              </View>
+            </View>
+          </>
+        )}
+
+        {type === 'away_mode' && (
+          <>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>自动离家检测</Text>
+              <Switch
+                checked={!!formData.autoDetect}
+                onChange={(e) => handleSwitchChange('autoDetect', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>关闭空调类</Text>
+              <Switch
+                checked={!!formData.turnOffAc}
+                onChange={(e) => handleSwitchChange('turnOffAc', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>关闭热水器</Text>
+              <Switch
+                checked={!!formData.turnOffWater}
+                onChange={(e) => handleSwitchChange('turnOffWater', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>保留储能供电</Text>
+              <Switch
+                checked={!!formData.keepBattery}
+                onChange={(e) => handleSwitchChange('keepBattery', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+          </>
+        )}
+
+        {type === 'comfort_temp' && (
+          <>
+            <View className={styles.formRow} onClick={() => handleTempSelect('summerTemp', [24, 25, 26, 27, 28])}>
+              <Text className={styles.formLabel}>夏季目标温度</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.summerTemp}°C</Text>
+                <Text className={styles.formArrow}>›</Text>
+              </View>
+            </View>
+            <View className={styles.formRow} onClick={() => handleTempSelect('winterTemp', [18, 20, 22, 24, 26])}>
+              <Text className={styles.formLabel}>冬季目标温度</Text>
+              <View style={styles.formLinkRow}>
+                <Text className={styles.formLink}>{formData.winterTemp}°C</Text>
+                <Text className={styles.formArrow}>›</Text>
+              </View>
+            </View>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>智能自动调节</Text>
+              <Switch
+                checked={!!formData.tempAutoAdjust}
+                onChange={(e) => handleSwitchChange('tempAutoAdjust', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+            <View className={styles.formRow}>
+              <Text className={styles.formLabel}>湿度控制联动</Text>
+              <Switch
+                checked={!!formData.humidityControl}
+                onChange={(e) => handleSwitchChange('humidityControl', e.detail.value)}
+                color='#00B578'
+              />
+            </View>
+          </>
+        )}
       </View>
-    </ScrollView>
+    );
+  };
+
+  return (
+    <View className={styles.page}>
+      <ScrollView scrollY>
+        <View className={styles.headerCard}>
+          <Text className={styles.headerTitle}>智能节能策略</Text>
+          <Text className={styles.headerDesc}>
+            开启智能策略，系统将根据您的用电习惯和电价时段，自动优化设备运行，帮您节省电费。
+          </Text>
+          <View className={styles.headerStats}>
+            <View className={styles.headerStat}>
+              <Text className={styles.statValue}>{enabledCount}/{strategies.length}</Text>
+              <Text className={styles.statLabel}>已开启策略</Text>
+            </View>
+            <View className={styles.headerStat}>
+              <Text className={styles.statValue}>¥{estimatedMonthlySaving}</Text>
+              <Text className={styles.statLabel}>预计月省</Text>
+            </View>
+          </View>
+        </View>
+
+        <Text className={styles.sectionTitle}>策略列表</Text>
+
+        <View className={styles.strategyList}>
+          {strategies.map(strategy => (
+            <View
+              key={strategy.id}
+              className={classnames(styles.strategyCard, !strategy.enabled && styles.disabled)}
+              onClick={() => handleStrategyClick(strategy)}
+            >
+              <View className={styles.strategyHeader}>
+                <View className={classnames(styles.strategyIcon, styles[getStrategyTypeClass(strategy.type)])}>
+                  {getStrategyIcon(strategy.type)}
+                </View>
+                <View className={styles.strategyInfo}>
+                  <Text className={styles.strategyName}>{strategy.name}</Text>
+                  <Text className={styles.strategyDesc}>{strategy.description}</Text>
+                  {strategy.enabled && (
+                    <Text className={styles.effectTag}>{getSavingText(strategy.type)}</Text>
+                  )}
+                </View>
+                <View
+                  className={classnames(styles.switchBtn, strategy.enabled && styles.active)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggle(strategy);
+                  }}
+                >
+                  <View className={styles.switchDot} />
+                </View>
+              </View>
+
+              {strategy.enabled && (
+                <View className={styles.strategyConfig}>
+                  {getConfigDisplay(strategy).map((config, index) => (
+                    <View key={index} className={styles.configRow}>
+                      <Text className={styles.configLabel}>{config.label}</Text>
+                      <View style={{ display: 'flex', alignItems: 'center' }}>
+                        <Text className={styles.configValue}>{config.value}</Text>
+                        <Text className={styles.configArrow}>›</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      {showModal && editingStrategy && (
+        <View className={styles.modalMask} onClick={closeModal}>
+          <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <View className={classnames(styles.strategyIcon, styles[getStrategyTypeClass(editingStrategy.type)])}>
+                {getStrategyIcon(editingStrategy.type)}
+              </View>
+              <Text className={styles.modalTitle}>{editingStrategy.name}配置</Text>
+            </View>
+
+            {renderConfigForm()}
+
+            <View className={styles.modalActions}>
+              <View className={classnames(styles.modalBtn, styles.cancelBtn)} onClick={closeModal}>
+                取消
+              </View>
+              <View className={classnames(styles.modalBtn, styles.confirmBtn)} onClick={handleSave}>
+                保存配置
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+    </View>
   );
 };
 

@@ -314,3 +314,255 @@
     opacity: 0.8;
   }
 }
+
+.modalMask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modalContent {
+  width: 660rpx;
+  max-height: 80vh;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  box-shadow: $shadow-popup;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-lg;
+}
+
+.modalSuccessIcon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50rpx;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-md;
+}
+
+.modalTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.exportReport {
+  background: $color-bg-hover;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+.exportReportTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  text-align: center;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.exportTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+  display: block;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.summaryBlock {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.blockTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-xs 0;
+  gap: $spacing-md;
+}
+
+.summaryRowLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+  width: 140rpx;
+}
+
+.summaryRowValue {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  flex: 1;
+  text-align: right;
+}
+
+.exportSuggestionItem {
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx dashed $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.exportSuggestionHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: 4rpx;
+}
+
+.exportSuggestionIndex {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  font-weight: $font-weight-medium;
+}
+
+.exportBadge {
+  padding: 2rpx 12rpx;
+  border-radius: $radius-round;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+}
+
+.badgeDone {
+  background: $color-primary-bg;
+  color: $color-primary;
+}
+
+.badgePending {
+  background: $color-warning-bg;
+  color: $color-warning;
+}
+
+.exportSuggestionTitle {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  flex: 1;
+}
+
+.exportSuggestionSaving {
+  font-size: 20rpx;
+  color: $color-primary;
+  margin-left: 48rpx;
+}
+
+.exportRecordItem {
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx dashed $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.exportRecordHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: 4rpx;
+}
+
+.exportRecordIndex {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  font-weight: $font-weight-medium;
+}
+
+.exportRecordAction {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.exportRecordResult {
+  font-size: 20rpx;
+  color: $color-text-secondary;
+  margin-left: 48rpx;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.exportRecordFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 48rpx;
+}
+
+.exportRecordMeta {
+  font-size: 20rpx;
+  color: $color-primary;
+}
+
+.exportRecordTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.modalBtn {
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.cancelBtn {
+  background: $color-bg-hover;
+  color: $color-text-secondary;
+}
+
+.confirmBtn {
+  background: $gradient-primary;
+  color: $color-text-white;
+}
