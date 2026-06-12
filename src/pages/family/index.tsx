@@ -1,27 +1,65 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, Input } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 import { mockFamilyMembers, mockMonthlyBill } from '@/data/strategy';
 import { FamilyMember } from '@/types';
 
 const FamilyPage: React.FC = () => {
-  const [members, setMembers] = useState<FamilyMember[]>([...mockFamilyMembers]);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editField, setEditField] = useState<'role' | 'goal' | 'familyGoal' | null>(null);
   const [tempValue, setTempValue] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useDidShow(() => {
+    console.log('[Family] Page did show, reloading data');
+    setIsLoading(true);
+    setTimeout(() => {
+      setMembers([...mockFamilyMembers]);
+      setIsLoading(false);
+    }, 50);
+  });
 
   const currentMonthBill = mockMonthlyBill[mockMonthlyBill.length - 1];
   
   const totalGoal = useMemo(() => {
+    if (!members || members.length === 0) return 0;
     return members.reduce((sum, m) => sum + (m.energyGoal || 0), 0);
   }, [members]);
 
   const goalPercent = useMemo(() => {
+    if (totalGoal <= 0) return 0;
     return Math.min((currentMonthBill.energy / totalGoal) * 100, 100);
   }, [currentMonthBill.energy, totalGoal]);
+
+  const validateGoalValue = (value: string, field: string): { valid: boolean; message?: string; numValue?: number } => {
+    if (!value || value.trim() === '') {
+      return { valid: false, message: '请输入数值' };
+    }
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue)) {
+      return { valid: false, message: '请输入有效的数字' };
+    }
+    if (numValue <= 0) {
+      return { valid: false, message: '数值必须大于0' };
+    }
+    if (field === 'goal' && numValue > 2000) {
+      return { valid: false, message: '个人目标不能超过2000 kWh' };
+    }
+    if (field === 'familyGoal' && numValue > 20000) {
+      return { valid: false, message: '家庭目标不能超过20000 kWh' };
+    }
+    if (field === 'goal' && numValue < 10) {
+      return { valid: false, message: '个人目标不能小于10 kWh' };
+    }
+    if (field === 'familyGoal' && numValue < 50) {
+      return { valid: false, message: '家庭目标不能小于50 kWh' };
+    }
+    return { valid: true, numValue };
+  };
 
   const getRoleName = (role: string) => {
     const names: Record<string, string> = {
@@ -33,6 +71,7 @@ const FamilyPage: React.FC = () => {
   };
 
   const getMemberAvatar = (name: string) => {
+    if (!name) return '👤';
     const avatars = ['👨', '👩', '👦', '👧', '🧑'];
     const index = name.charCodeAt(0) % avatars.length;
     return avatars[index] || '👤';
@@ -134,6 +173,12 @@ const FamilyPage: React.FC = () => {
               icon: 'success',
               duration: 1500
             });
+          } else {
+            Taro.showToast({
+              title: '昵称不能为空',
+              icon: 'none',
+              duration: 1500
+            });
           }
         }
       }
@@ -143,15 +188,26 @@ const FamilyPage: React.FC = () => {
   const handleGoalClick = () => {
     console.log('[Family] Edit family goal');
     setEditField('familyGoal');
-    setTempValue(String(totalGoal));
+    setTempValue(String(totalGoal || 500));
     setShowEditModal(true);
   };
 
   const handleConfirmEdit = () => {
     console.log('[Family] Confirm edit, field:', editField, 'value:', tempValue);
     
+    const validation = validateGoalValue(tempValue, editField || '');
+    if (!validation.valid) {
+      Taro.showToast({
+        title: validation.message || '输入无效',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    const goalValue = validation.numValue!;
+
     if (editField === 'goal' && editingMember) {
-      const goalValue = parseInt(tempValue) || 100;
       setMembers(prev =>
         prev.map(m => {
           if (m.id === editingMember.id) {
@@ -166,7 +222,6 @@ const FamilyPage: React.FC = () => {
         duration: 1500
       });
     } else if (editField === 'familyGoal') {
-      const goalValue = parseInt(tempValue) || 500;
       const avgGoal = Math.ceil(goalValue / Math.max(members.length, 1));
       setMembers(prev =>
         prev.map(m => {
@@ -197,10 +252,26 @@ const FamilyPage: React.FC = () => {
   };
 
   const getEditModalTitle = () => {
-    if (editField === 'goal') return `设置 ${editingMember?.name} 的用电目标`;
+    if (editField === 'goal') return `设置 ${editingMember?.name || ''} 的用电目标`;
     if (editField === 'familyGoal') return '设置家庭月度用电目标';
     return '编辑';
   };
+
+  const getMemberGoalPercent = (member: FamilyMember) => {
+    const goal = member.energyGoal || 1;
+    const memberUsage = currentMonthBill.energy / Math.max(members.length, 1);
+    return Math.min((memberUsage / goal) * 100, 100);
+  };
+
+  if (isLoading) {
+    return (
+      <View className={styles.page}>
+        <View className={styles.loadingContainer}>
+          <Text className={styles.loadingText}>加载中...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className={styles.page}>
@@ -234,50 +305,46 @@ const FamilyPage: React.FC = () => {
           </View>
 
           <View className={styles.memberList}>
-            {members.map(member => (
-              <View
-                key={member.id}
-                className={styles.memberItem}
-                onClick={() => handleMemberClick(member)}
-              >
-                <View className={styles.memberAvatar}>
-                  {getMemberAvatar(member.name)}
-                </View>
-                <View className={styles.memberInfo}>
-                  <View style={{ display: 'flex', alignItems: 'center' }}>
-                    <Text className={styles.memberName}>{member.name}</Text>
-                    <Text className={classnames(styles.roleTag, styles[member.role])}>
-                      {getRoleName(member.role)}
+            {members && members.length > 0 ? (
+              members.map(member => (
+                <View
+                  key={member.id}
+                  className={styles.memberItem}
+                  onClick={() => handleMemberClick(member)}
+                >
+                  <View className={styles.memberAvatar}>
+                    {getMemberAvatar(member.name)}
+                  </View>
+                  <View className={styles.memberInfo}>
+                    <View style={{ display: 'flex', alignItems: 'center' }}>
+                      <Text className={styles.memberName}>{member.name}</Text>
+                      <Text className={classnames(styles.roleTag, styles[member.role])}>
+                        {getRoleName(member.role)}
+                      </Text>
+                    </View>
+                    <Text className={styles.memberRole}>
+                      用电目标：{member.energyGoal || 0} kWh/月
                     </Text>
                   </View>
-                  <Text className={styles.memberRole}>
-                    用电目标：{member.energyGoal} kWh/月
-                  </Text>
-                </View>
-                <View className={styles.memberGoal}>
-                  <Text className={styles.goalValue}>
-                    {Math.round(
-                      Math.min(
-                        ((currentMonthBill.energy / members.length) / (member.energyGoal || 1)) * 100,
-                        100
-                      )
-                    )}%
-                  </Text>
-                  <View className={styles.goalProgress}>
-                    <View
-                      className={styles.goalFill}
-                      style={{
-                        width: `${Math.min(
-                          ((currentMonthBill.energy / members.length) / (member.energyGoal || 1)) * 100,
-                          100
-                        )}%`
-                      }}
-                    />
+                  <View className={styles.memberGoal}>
+                    <Text className={styles.goalValue}>
+                      {Math.round(getMemberGoalPercent(member))}%
+                    </Text>
+                    <View className={styles.goalProgress}>
+                      <View
+                        className={styles.goalFill}
+                        style={{ width: `${getMemberGoalPercent(member)}%` }}
+                      />
+                    </View>
                   </View>
+                  <Text className={styles.memberArrow}>›</Text>
                 </View>
-                <Text className={styles.memberArrow}>›</Text>
+              ))
+            ) : (
+              <View className={styles.emptyState}>
+                <Text className={styles.emptyText}>暂无家庭成员</Text>
               </View>
-            ))}
+            )}
           </View>
         </View>
 
@@ -326,12 +393,13 @@ const FamilyPage: React.FC = () => {
                 value={tempValue}
                 onInput={(e) => setTempValue(e.detail.value)}
                 placeholder='请输入数值'
+                focus
               />
               <Text className={styles.inputUnit}>kWh / 月</Text>
             </View>
 
             <View className={styles.modalTips}>
-              <Text>合理的用电目标有助于节约能源和电费支出</Text>
+              <Text>{editField === 'goal' ? '个人目标建议 50-500 kWh' : '家庭目标建议 200-3000 kWh'}</Text>
             </View>
 
             <View className={styles.modalActions}>

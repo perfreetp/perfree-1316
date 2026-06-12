@@ -126,4 +126,29 @@
     font-size: $font-size-xs;
     color: $color-text-secondary;
   }
+
+  .summaryRow {
+    margin-top: $spacing-sm;
+    padding-top: $spacing-sm;
+    border-top: 1rpx dashed $color-divider;
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+  }
+
+  .summaryItem {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+  }
+
+  .summaryLabel {
+    font-size: 20rpx;
+    flex-shrink: 0;
+  }
+
+  .summaryValue {
+    font-size: 20rpx;
+    color: $color-text-secondary;
+  }
 }

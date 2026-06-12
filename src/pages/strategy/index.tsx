@@ -100,27 +100,117 @@ const StrategyPage: React.FC = () => {
     setFormData({});
   };
 
+  const validateConfig = (): { valid: boolean; message?: string } => {
+    if (!editingStrategy) return { valid: false };
+    
+    const type = editingStrategy.type;
+    
+    if (type === 'peak_shaving') {
+      const val = formData.maxPeakPower;
+      if (!val || val.trim() === '') {
+        return { valid: false, message: '请输入最大功率阈值' };
+      }
+      const num = parseInt(val, 10);
+      if (isNaN(num)) {
+        return { valid: false, message: '请输入有效的数字' };
+      }
+      if (num < 500) {
+        return { valid: false, message: '阈值不能小于500W' };
+      }
+      if (num > 10000) {
+        return { valid: false, message: '阈值不能超过10000W' };
+      }
+    }
+    
+    if (type === 'battery_charge') {
+      const chargeStart = formData.chargeStartTime;
+      const chargeEnd = formData.chargeEndTime;
+      const dischargeStart = formData.dischargeStartTime;
+      const dischargeEnd = formData.dischargeEndTime;
+      
+      if (!chargeStart || !chargeEnd) {
+        return { valid: false, message: '请选择充电时段' };
+      }
+      if (!dischargeStart || !dischargeEnd) {
+        return { valid: false, message: '请选择放电时段' };
+      }
+      if (chargeStart === chargeEnd) {
+        return { valid: false, message: '充电开始和结束时间不能相同' };
+      }
+      if (dischargeStart === dischargeEnd) {
+        return { valid: false, message: '放电开始和结束时间不能相同' };
+      }
+      
+      const minBatt = parseInt(formData.minBattery, 10);
+      const maxBatt = parseInt(formData.maxBattery, 10);
+      if (isNaN(minBatt) || isNaN(maxBatt)) {
+        return { valid: false, message: '请输入有效的电量值' };
+      }
+      if (minBatt < 5 || minBatt > 50) {
+        return { valid: false, message: '最小电量需在5%-50%之间' };
+      }
+      if (maxBatt < 50 || maxBatt > 100) {
+        return { valid: false, message: '最大电量需在50%-100%之间' };
+      }
+      if (minBatt >= maxBatt) {
+        return { valid: false, message: '最小电量需小于最大电量' };
+      }
+    }
+    
+    if (type === 'away_mode') {
+      if (!formData.turnOffAc && !formData.turnOffWater) {
+        return { valid: false, message: '请至少选择一类要关闭的设备' };
+      }
+    }
+    
+    if (type === 'comfort_temp') {
+      const summer = parseInt(formData.summerTemp, 10);
+      const winter = parseInt(formData.winterTemp, 10);
+      if (isNaN(summer) || isNaN(winter)) {
+        return { valid: false, message: '请输入有效的温度值' };
+      }
+      if (summer < 20 || summer > 30) {
+        return { valid: false, message: '夏季温度需在20-30°C之间' };
+      }
+      if (winter < 16 || winter > 26) {
+        return { valid: false, message: '冬季温度需在16-26°C之间' };
+      }
+    }
+    
+    return { valid: true };
+  };
+
   const handleSave = () => {
     if (!editingStrategy) return;
     console.log('[Strategy] Save config for:', editingStrategy.name, formData);
+
+    const validation = validateConfig();
+    if (!validation.valid) {
+      Taro.showToast({
+        title: validation.message || '配置无效',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
 
     let newConfig: Record<string, any> = {};
     
     switch (editingStrategy.type) {
       case 'peak_shaving':
         newConfig = {
-          maxPeakPower: parseInt(formData.maxPeakPower) || 3000,
+          maxPeakPower: parseInt(formData.maxPeakPower),
           autoAdjust: !!formData.autoAdjust
         };
         break;
       case 'battery_charge':
         newConfig = {
-          chargeStartTime: formData.chargeStartTime || '00:00',
-          chargeEndTime: formData.chargeEndTime || '06:00',
-          dischargeStartTime: formData.dischargeStartTime || '08:00',
-          dischargeEndTime: formData.dischargeEndTime || '11:00',
-          minBatteryLevel: parseInt(formData.minBattery) || 20,
-          maxBatteryLevel: parseInt(formData.maxBattery) || 90
+          chargeStartTime: formData.chargeStartTime,
+          chargeEndTime: formData.chargeEndTime,
+          dischargeStartTime: formData.dischargeStartTime,
+          dischargeEndTime: formData.dischargeEndTime,
+          minBatteryLevel: parseInt(formData.minBattery),
+          maxBatteryLevel: parseInt(formData.maxBattery)
         };
         break;
       case 'away_mode':
@@ -135,8 +225,8 @@ const StrategyPage: React.FC = () => {
         break;
       case 'comfort_temp':
         newConfig = {
-          summerTemp: parseInt(formData.summerTemp) || 26,
-          winterTemp: parseInt(formData.winterTemp) || 22,
+          summerTemp: parseInt(formData.summerTemp),
+          winterTemp: parseInt(formData.winterTemp),
           autoAdjust: !!formData.tempAutoAdjust,
           humidityControl: !!formData.humidityControl
         };
@@ -503,19 +593,17 @@ const StrategyPage: React.FC = () => {
                 </View>
               </View>
 
-              {strategy.enabled && (
-                <View className={styles.strategyConfig}>
-                  {getConfigDisplay(strategy).map((config, index) => (
-                    <View key={index} className={styles.configRow}>
-                      <Text className={styles.configLabel}>{config.label}</Text>
-                      <View style={{ display: 'flex', alignItems: 'center' }}>
-                        <Text className={styles.configValue}>{config.value}</Text>
-                        <Text className={styles.configArrow}>›</Text>
-                      </View>
+              <View className={classnames(styles.strategyConfig, !strategy.enabled && styles.configDisabled)}>
+                {getConfigDisplay(strategy).map((config, index) => (
+                  <View key={index} className={styles.configRow}>
+                    <Text className={styles.configLabel}>{config.label}</Text>
+                    <View style={{ display: 'flex', alignItems: 'center' }}>
+                      <Text className={styles.configValue}>{config.value}</Text>
+                      <Text className={styles.configArrow}>›</Text>
                     </View>
-                  ))}
-                </View>
-              )}
+                  </View>
+                ))}
+              </View>
             </View>
           ))}
         </View>

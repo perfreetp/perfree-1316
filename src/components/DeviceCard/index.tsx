@@ -32,6 +32,35 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, onClick }) =>
     return icons[type] || '💡';
   };
 
+  const getSummaryInfo = () => {
+    const items: { label: string; value: string }[] = [];
+    
+    if (device.timerOn && device.timerStartTime && device.timerEndTime) {
+      items.push({
+        label: '⏰',
+        value: `${device.timerStartTime}-${device.timerEndTime}`
+      });
+    }
+    
+    if (device.maxPower) {
+      items.push({
+        label: '⚡',
+        value: `上限 ${formatPower(device.maxPower)}`
+      });
+    }
+    
+    if (device.group && device.group !== '未分组') {
+      items.push({
+        label: '📁',
+        value: device.group
+      });
+    }
+    
+    return items;
+  };
+
+  const summaryItems = getSummaryInfo();
+
   return (
     <View
       className={classnames(styles.deviceCard, isOn && styles.active, isOffline && styles.offline)}
@@ -64,6 +93,17 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, onClick }) =>
           <Text className={styles.batteryLevel}>🔋 {device.batteryLevel}%</Text>
         )}
       </View>
+
+      {summaryItems.length > 0 && (
+        <View className={styles.summaryRow}>
+          {summaryItems.map((item, index) => (
+            <View key={index} className={styles.summaryItem}>
+              <Text className={styles.summaryLabel}>{item.label}</Text>
+              <Text className={styles.summaryValue}>{item.value}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {device.targetTemp !== undefined && isOn && (
         <View className={styles.tempRow}>

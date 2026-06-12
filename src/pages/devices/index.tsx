@@ -139,11 +139,52 @@ const DevicesPage: React.FC = () => {
     setEditingDevice(null);
   };
 
+  const validatePower = (value: string): { valid: boolean; message?: string; numValue?: number } => {
+    if (!value || value.trim() === '') {
+      return { valid: false, message: '请输入功率上限' };
+    }
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue)) {
+      return { valid: false, message: '请输入有效的数字' };
+    }
+    if (numValue <= 0) {
+      return { valid: false, message: '功率必须大于0W' };
+    }
+    const maxAllowed = editingDevice?.type === 'charger' ? 7000 : 5000;
+    if (numValue > maxAllowed) {
+      return { valid: false, message: `功率不能超过${maxAllowed}W` };
+    }
+    if (numValue < 500) {
+      return { valid: false, message: '功率不能小于500W' };
+    }
+    return { valid: true, numValue };
+  };
+
+  const validateTimer = (): { valid: boolean; message?: string } => {
+    if (!timerEnabled) return { valid: true };
+    if (!timerStart || !timerEnd) {
+      return { valid: false, message: '请选择定时时间段' };
+    }
+    if (timerStart === timerEnd) {
+      return { valid: false, message: '开始和结束时间不能相同' };
+    }
+    return { valid: true };
+  };
+
   const handleSave = () => {
     if (!editingDevice) return;
     console.log('[Devices] Save settings for:', editingDevice.name, 'type:', editType);
 
     if (editType === 'timer') {
+      const validation = validateTimer();
+      if (!validation.valid) {
+        Taro.showToast({
+          title: validation.message || '定时设置无效',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
       setDevices(prev =>
         prev.map(d => {
           if (d.id === editingDevice.id) {
@@ -162,8 +203,18 @@ const DevicesPage: React.FC = () => {
         icon: 'success',
         duration: 1500
       });
+      closeModal();
     } else if (editType === 'power') {
-      const power = parseInt(maxPower) || 3000;
+      const validation = validatePower(maxPower);
+      if (!validation.valid) {
+        Taro.showToast({
+          title: validation.message || '功率设置无效',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+      const power = validation.numValue!;
       setDevices(prev =>
         prev.map(d => {
           if (d.id === editingDevice.id) {
@@ -181,43 +232,46 @@ const DevicesPage: React.FC = () => {
         icon: 'success',
         duration: 1500
       });
+      closeModal();
     } else if (editType === 'group') {
       const newGroup = groups.find(g => g.id === selectedGroupId);
       if (newGroup) {
-        setDevices(prev =>
-          prev.map(d => {
+        const newGroupName = newGroup.name === '全部设备' ? editingDevice.group : newGroup.name;
+        setDevices(prevDevices => {
+          const updatedDevices = prevDevices.map(d => {
             if (d.id === editingDevice.id) {
               return {
                 ...d,
-                group: newGroup.name === '全部设备' ? d.group : newGroup.name
+                group: newGroupName
               };
             }
             return d;
-          })
-        );
-        
-        setGroups(prevGroups =>
-          prevGroups.map(g => {
-            let newDeviceIds = g.deviceIds.filter(id => id !== editingDevice.id);
-            if (g.id === selectedGroupId && g.id !== 'g1') {
-              newDeviceIds = [...newDeviceIds, editingDevice.id];
-            }
-            if (g.id === 'g1') {
-              newDeviceIds = devices.map(d => d.id);
-            }
-            return { ...g, deviceIds: newDeviceIds };
-          })
-        );
+          });
+          
+          setGroups(prevGroups =>
+            prevGroups.map(g => {
+              let newDeviceIds = g.deviceIds.filter(id => id !== editingDevice.id);
+              if (g.id === selectedGroupId && g.id !== 'g1') {
+                newDeviceIds = [...newDeviceIds, editingDevice.id];
+              }
+              if (g.id === 'g1') {
+                newDeviceIds = updatedDevices.map(d => d.id);
+              }
+              return { ...g, deviceIds: newDeviceIds };
+            })
+          );
+          
+          return updatedDevices;
+        });
         
         Taro.showToast({
-          title: `已移至「${newGroup.name}」分组`,
+          title: `已移至「${newGroupName}」分组`,
           icon: 'success',
           duration: 1500
         });
+        closeModal();
       }
     }
-
-    closeModal();
   };
 
   const handleGroupChange = (groupId: string) => {
