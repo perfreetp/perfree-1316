@@ -6,11 +6,12 @@ import classnames from 'classnames';
 import { mockFamilyMembers, mockMonthlyBill } from '@/data/strategy';
 import { FamilyMember } from '@/types';
 
-const STORAGE_KEY = 'family_members_data';
+const MEMBERS_STORAGE_KEY = 'family_members_data';
+const GOAL_STORAGE_KEY = 'family_goal_data';
 
 const loadPersistedMembers = (): FamilyMember[] => {
   try {
-    const stored = Taro.getStorageSync(STORAGE_KEY);
+    const stored = Taro.getStorageSync(MEMBERS_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -18,24 +19,48 @@ const loadPersistedMembers = (): FamilyMember[] => {
       }
     }
   } catch (e) {
-    console.warn('[Family] Failed to load persisted data:', e);
+    console.warn('[Family] Failed to load members:', e);
   }
   return [...mockFamilyMembers];
 };
 
+const loadPersistedFamilyGoal = (members: FamilyMember[]): number => {
+  try {
+    const stored = Taro.getStorageSync(GOAL_STORAGE_KEY);
+    if (stored && typeof stored === 'number' && stored > 0) {
+      return stored;
+    }
+  } catch (e) {
+    console.warn('[Family] Failed to load family goal:', e);
+  }
+  if (members && members.length > 0) {
+    return members.reduce((sum, m) => sum + (m.energyGoal || 0), 0);
+  }
+  return 500;
+};
+
 const persistMembers = (members: FamilyMember[]) => {
   try {
-    Taro.setStorageSync(STORAGE_KEY, JSON.stringify(members));
+    Taro.setStorageSync(MEMBERS_STORAGE_KEY, JSON.stringify(members));
   } catch (e) {
-    console.warn('[Family] Failed to persist data:', e);
+    console.warn('[Family] Failed to persist members:', e);
+  }
+};
+
+const persistFamilyGoal = (goal: number) => {
+  try {
+    Taro.setStorageSync(GOAL_STORAGE_KEY, goal);
+  } catch (e) {
+    console.warn('[Family] Failed to persist family goal:', e);
   }
 };
 
 const FamilyPage: React.FC = () => {
   const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [familyGoal, setFamilyGoal] = useState<number>(500);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editField, setEditField] = useState<'role' | 'goal' | 'familyGoal' | null>(null);
+  const [editField, setEditField] = useState<'goal' | 'familyGoal' | null>(null);
   const [tempValue, setTempValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const initializedRef = useRef(false);
@@ -45,8 +70,10 @@ const FamilyPage: React.FC = () => {
     if (!initializedRef.current) {
       setIsLoading(true);
       setTimeout(() => {
-        const persisted = loadPersistedMembers();
-        setMembers(persisted);
+        const persistedMembers = loadPersistedMembers();
+        const persistedGoal = loadPersistedFamilyGoal(persistedMembers);
+        setMembers(persistedMembers);
+        setFamilyGoal(persistedGoal);
         setIsLoading(false);
         initializedRef.current = true;
       }, 50);
@@ -54,19 +81,25 @@ const FamilyPage: React.FC = () => {
   });
 
   const currentMonthEnergy = useMemo(() => {
-    if (!mockMonthlyBill || mockMonthlyBill.length === 0) return 0;
-    return mockMonthlyBill[mockMonthlyBill.length - 1]?.energy || 0;
+    try {
+      if (!mockMonthlyBill || !Array.isArray(mockMonthlyBill) || mockMonthlyBill.length === 0) {
+        return 0;
+      }
+      const last = mockMonthlyBill[mockMonthlyBill.length - 1];
+      if (!last || typeof last.energy !== 'number') {
+        return 0;
+      }
+      return last.energy;
+    } catch (e) {
+      console.warn('[Family] Failed to get month energy:', e);
+      return 0;
+    }
   }, []);
 
-  const totalGoal = useMemo(() => {
-    if (!members || members.length === 0) return 0;
-    return members.reduce((sum, m) => sum + (m.energyGoal || 0), 0);
-  }, [members]);
-
   const goalPercent = useMemo(() => {
-    if (totalGoal <= 0) return 0;
-    return Math.min((currentMonthEnergy / totalGoal) * 100, 100);
-  }, [currentMonthEnergy, totalGoal]);
+    if (familyGoal <= 0) return 0;
+    return Math.min((currentMonthEnergy / familyGoal) * 100, 100);
+  }, [currentMonthEnergy, familyGoal]);
 
   const updateMembers = (updater: (prev: FamilyMember[]) => FamilyMember[]) => {
     setMembers(prev => {
@@ -76,16 +109,25 @@ const FamilyPage: React.FC = () => {
     });
   };
 
+  const updateFamilyGoal = (goal: number) => {
+    setFamilyGoal(goal);
+    persistFamilyGoal(goal);
+  };
+
   const validateGoalValue = (value: string, field: string): { valid: boolean; message?: string; numValue?: number } => {
-    if (!value || (typeof value === 'string' && value.trim() === '')) {
+    const strValue = String(value ?? '').trim();
+    if (strValue === '') {
       return { valid: false, message: '请输入数值' };
     }
-    const numValue = parseInt(String(value), 10);
-    if (isNaN(numValue)) {
+    const numValue = Number(strValue);
+    if (isNaN(numValue) || !Number.isFinite(numValue)) {
       return { valid: false, message: '请输入有效的数字' };
     }
     if (numValue <= 0) {
       return { valid: false, message: '数值必须大于0' };
+    }
+    if (!Number.isInteger(numValue)) {
+      return { valid: false, message: '请输入整数' };
     }
     if (field === 'goal' && numValue > 2000) {
       return { valid: false, message: '个人目标不能超过2000 kWh' };
@@ -99,7 +141,7 @@ const FamilyPage: React.FC = () => {
     if (field === 'familyGoal' && numValue < 50) {
       return { valid: false, message: '家庭目标不能小于50 kWh' };
     }
-    return { valid: true, numValue };
+    return { valid: true, numValue: Math.round(numValue) };
   };
 
   const getRoleName = (role: string) => {
@@ -197,7 +239,7 @@ const FamilyPage: React.FC = () => {
 
   const handleGoalClick = () => {
     setEditField('familyGoal');
-    setTempValue(String(totalGoal || 500));
+    setTempValue(String(familyGoal));
     setShowEditModal(true);
   };
 
@@ -215,19 +257,38 @@ const FamilyPage: React.FC = () => {
         prev.map(m => m.id === editingMember.id ? { ...m, energyGoal: goalValue } : m)
       );
       Taro.showToast({ title: '目标已更新', icon: 'success', duration: 1500 });
+      closeModal();
     } else if (editField === 'familyGoal') {
-      const avgGoal = Math.ceil(goalValue / Math.max(members.length, 1));
-      updateMembers(prev =>
-        prev.map(m => {
-          if (m.role === 'owner' || m.role === 'admin') {
-            return { ...m, energyGoal: Math.ceil(avgGoal * 1.2) };
+      const memberCount = Math.max(members.length, 1);
+      const baseGoal = Math.floor(goalValue / memberCount);
+      const remainder = goalValue - baseGoal * memberCount;
+      
+      updateMembers(prev => {
+        const sorted = [...prev].sort((a, b) => {
+          const priority: Record<string, number> = { owner: 0, admin: 1, member: 2 };
+          return (priority[a.role] ?? 99) - (priority[b.role] ?? 99);
+        });
+        
+        const updated = prev.map(m => {
+          let target = baseGoal;
+          const rank = sorted.findIndex(s => s.id === m.id);
+          if (rank < remainder) {
+            target += 1;
           }
-          return { ...m, energyGoal: avgGoal };
-        })
-      );
+          return { ...m, energyGoal: Math.max(10, target) };
+        });
+        
+        return updated;
+      });
+      
+      updateFamilyGoal(goalValue);
+      
       Taro.showToast({ title: '家庭目标已更新', icon: 'success', duration: 1500 });
+      closeModal();
     }
-    
+  };
+
+  const closeModal = () => {
     setShowEditModal(false);
     setEditingMember(null);
     setEditField(null);
@@ -235,10 +296,7 @@ const FamilyPage: React.FC = () => {
   };
 
   const handleCancelEdit = () => {
-    setShowEditModal(false);
-    setEditingMember(null);
-    setEditField(null);
-    setTempValue('');
+    closeModal();
   };
 
   const getEditModalTitle = () => {
@@ -272,15 +330,15 @@ const FamilyPage: React.FC = () => {
           
           <View className={styles.familyStats}>
             <View className={styles.statItem}>
-              <Text className={styles.statValue}>{currentMonthEnergy.toFixed(0)}</Text>
+              <Text className={styles.statValue}>{Math.round(currentMonthEnergy)}</Text>
               <Text className={styles.statLabel}>本月用电(kWh)</Text>
             </View>
             <View className={styles.statItem}>
-              <Text className={styles.statValue}>{totalGoal}</Text>
+              <Text className={styles.statValue}>{familyGoal}</Text>
               <Text className={styles.statLabel}>月度目标(kWh)</Text>
             </View>
             <View className={styles.statItem}>
-              <Text className={styles.statValue}>{goalPercent.toFixed(0)}%</Text>
+              <Text className={styles.statValue}>{Math.round(goalPercent)}%</Text>
               <Text className={styles.statLabel}>目标完成度</Text>
             </View>
           </View>
@@ -346,7 +404,7 @@ const FamilyPage: React.FC = () => {
             <View className={styles.goalRow}>
               <Text className={styles.goalLabel}>月度电量目标</Text>
               <View className={styles.goalContent}>
-                <Text className={styles.goalNum}>{totalGoal}</Text>
+                <Text className={styles.goalNum}>{familyGoal}</Text>
                 <Text className={styles.goalUnit}>kWh</Text>
                 <Text>›</Text>
               </View>
@@ -354,7 +412,7 @@ const FamilyPage: React.FC = () => {
             <View className={styles.goalRow}>
               <Text className={styles.goalLabel}>月度电费目标</Text>
               <View className={styles.goalContent}>
-                <Text className={styles.goalNum}>¥{Math.round(totalGoal * 0.6)}</Text>
+                <Text className={styles.goalNum}>¥{Math.round(familyGoal * 0.6)}</Text>
                 <Text className={styles.goalUnit}>元</Text>
                 <Text>›</Text>
               </View>
@@ -362,7 +420,7 @@ const FamilyPage: React.FC = () => {
             <View className={styles.goalRow}>
               <Text className={styles.goalLabel}>月度减碳目标</Text>
               <View className={styles.goalContent}>
-                <Text className={styles.goalNum}>{Math.round(totalGoal * 0.5)}</Text>
+                <Text className={styles.goalNum}>{Math.round(familyGoal * 0.5)}</Text>
                 <Text className={styles.goalUnit}>kg</Text>
                 <Text>›</Text>
               </View>
