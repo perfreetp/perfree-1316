@@ -1,0 +1,356 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: $spacing-xl;
+}
+
+.heroCard {
+  margin: 0 $page-padding $spacing-lg;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  background: $gradient-primary;
+  color: $color-text-white;
+  box-shadow: 0 8rpx 32rpx rgba(0, 181, 120, 0.3);
+}
+
+.heroTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.periodBadge {
+  padding: 8rpx 20rpx;
+  border-radius: $radius-round;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.periodBadgePeak {
+  background: rgba(255, 125, 0, 0.8);
+}
+
+.periodBadgeValley {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.currentTime {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.powerSection {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.powerLabel {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.powerValue {
+  font-size: 80rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  display: block;
+}
+
+.powerUnit {
+  font-size: $font-size-lg;
+  opacity: 0.9;
+  margin-left: $spacing-xs;
+}
+
+.heroStats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.heroStatItem {
+  text-align: center;
+  flex: 1;
+}
+
+.heroStatValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.heroStatLabel {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+}
+
+.sectionWrap {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+}
+
+.statsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.statItem {
+  width: calc(50% - #{$spacing-md} / 2);
+}
+
+.sectionCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.periodSection {
+  margin-bottom: $spacing-md;
+}
+
+.periodTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: block;
+}
+
+.periodTimeline {
+  display: flex;
+  height: 24rpx;
+  border-radius: $radius-round;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+}
+
+.periodSegment {
+  height: 100%;
+  position: relative;
+
+  &.peak {
+    background: $color-peak;
+  }
+
+  &.valley {
+    background: $color-valley;
+  }
+
+  &.flat {
+    background: $color-warning;
+  }
+}
+
+.periodLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.periodLegend {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-round;
+  margin-right: $spacing-xs;
+
+  &.peak {
+    background: $color-peak;
+  }
+
+  &.valley {
+    background: $color-valley;
+  }
+
+  &.flat {
+    background: $color-warning;
+  }
+}
+
+.alertCard {
+  background: linear-gradient(135deg, #FFF7E6 0%, #FFF2E8 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  display: flex;
+  align-items: center;
+  box-shadow: $shadow-card;
+
+  &.hasError {
+    background: linear-gradient(135deg, #FFECE8 0%, #FFF2F0 100%);
+  }
+}
+
+.alertIcon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-round;
+  background: rgba(255, 125, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: $spacing-md;
+}
+
+.alertContent {
+  flex: 1;
+}
+
+.alertTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.alertDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+}
+
+.alertArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionMore {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.quickDevices {
+  display: flex;
+  gap: $spacing-md;
+  overflow-x: auto;
+  padding-bottom: $spacing-xs;
+  @include scroll-x-container;
+}
+
+.quickDeviceItem {
+  @include scroll-x-item(220rpx);
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-card;
+  text-align: center;
+  flex-shrink: 0;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.deviceIcon {
+  font-size: 48rpx;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.deviceName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.deviceStatus {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+
+  &.on {
+    color: $color-primary;
+  }
+
+  &.offline {
+    color: $color-error;
+  }
+}
+
+.suggestionCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: flex-start;
+}
+
+.suggestionIcon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-lg;
+  background: $color-primary-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+}
+
+.suggestionContent {
+  flex: 1;
+}
+
+.suggestionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.suggestionDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  display: block;
+}
+
+.savingTag {
+  display: inline-block;
+  margin-top: $spacing-sm;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-sm;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: $font-size-xs;
+}

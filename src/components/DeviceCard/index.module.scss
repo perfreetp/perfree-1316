@@ -1,0 +1,129 @@
+@use '@/styles/variables.scss' as *;
+
+.deviceCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.active {
+    border: 2rpx solid $color-primary;
+    background: linear-gradient(135deg, rgba(0, 181, 120, 0.05) 0%, $color-bg-card 100%);
+  }
+
+  &.offline {
+    opacity: 0.6;
+  }
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $spacing-md;
+  }
+
+  .icon {
+    font-size: 48rpx;
+  }
+
+  .switchBtn {
+    width: 88rpx;
+    height: 48rpx;
+    border-radius: $radius-round;
+    background: $color-border;
+    padding: 4rpx;
+    box-sizing: border-box;
+    transition: all $transition-base;
+
+    &.switchOn {
+      background: $color-primary;
+    }
+
+    &.switchDisabled {
+      background: $color-text-disabled;
+    }
+  }
+
+  .switchDot {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: $radius-round;
+    background: #fff;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+    transition: all $transition-base;
+  }
+
+  .switchOn .switchDot {
+    transform: translateX(40rpx);
+  }
+
+  .deviceName {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    display: block;
+    margin-bottom: $spacing-xs;
+    @include text-ellipsis;
+  }
+
+  .deviceType {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+    display: block;
+    margin-bottom: $spacing-md;
+  }
+
+  .statusRow {
+    margin-bottom: $spacing-sm;
+  }
+
+  .statusText {
+    font-size: $font-size-xs;
+    padding: 4rpx 12rpx;
+    border-radius: $radius-sm;
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+
+    &.statusOn {
+      background: $color-primary-bg;
+      color: $color-primary;
+    }
+
+    &.statusOffline {
+      background: rgba(245, 63, 63, 0.1);
+      color: $color-error;
+    }
+  }
+
+  .powerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-xs;
+  }
+
+  .powerValue {
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+  }
+
+  .batteryLevel {
+    font-size: $font-size-xs;
+    color: $color-primary;
+  }
+
+  .tempRow {
+    margin-top: $spacing-xs;
+  }
+
+  .tempText {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}

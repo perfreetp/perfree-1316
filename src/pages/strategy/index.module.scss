@@ -1,0 +1,231 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: $spacing-xl;
+}
+
+.headerCard {
+  margin: $page-padding;
+  margin-bottom: $spacing-md;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  background: $gradient-info;
+  color: $color-text-white;
+  box-shadow: 0 6rpx 24rpx rgba(22, 93, 255, 0.25);
+}
+
+.headerTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.headerDesc {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+  line-height: 1.5;
+  display: block;
+  margin-bottom: $spacing-lg;
+}
+
+.headerStats {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.headerStat {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+}
+
+.statValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: block;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  padding: $spacing-md $page-padding;
+  display: block;
+}
+
+.strategyList {
+  padding: 0 $page-padding;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.strategyCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.strategyHeader {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.strategyIcon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+
+  &.peakShaving {
+    background: rgba(255, 125, 0, 0.1);
+  }
+
+  &.battery {
+    background: rgba(0, 181, 120, 0.1);
+  }
+
+  &.away {
+    background: rgba(22, 93, 255, 0.1);
+  }
+
+  &.comfort {
+    background: rgba(245, 63, 63, 0.1);
+  }
+}
+
+.strategyInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.strategyName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.strategyDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.switchBtn {
+  width: 88rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  background: $color-border;
+  padding: 4rpx;
+  box-sizing: border-box;
+  transition: all $transition-base;
+  flex-shrink: 0;
+  margin-left: $spacing-md;
+
+  &.active {
+    background: $color-primary;
+  }
+}
+
+.switchDot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: $radius-round;
+  background: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+  transition: all $transition-base;
+}
+
+.active .switchDot {
+  transform: translateX(40rpx);
+}
+
+.strategyConfig {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.configRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.configLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.configValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.configArrow {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-left: $spacing-xs;
+}
+
+.effectTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-sm;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: $font-size-xs;
+  margin-top: $spacing-sm;
+
+  &::before {
+    content: '✓';
+    margin-right: 4rpx;
+  }
+}
+
+.disabled .strategyIcon,
+.disabled .strategyName,
+.disabled .strategyDesc {
+  opacity: 0.5;
+}

@@ -1,0 +1,61 @@
+@use '@/styles/variables.scss' as *;
+
+.progressWrap {
+  width: 100%;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.value {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+
+  &.primary {
+    background: $gradient-primary;
+  }
+
+  &.warning {
+    background: $gradient-warning;
+  }
+
+  &.error {
+    background: linear-gradient(135deg, #F53F3F 0%, #FF6B6B 100%);
+  }
+
+  &.success {
+    background: $gradient-energy;
+  }
+}
+
+.percentText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  display: block;
+  text-align: right;
+}

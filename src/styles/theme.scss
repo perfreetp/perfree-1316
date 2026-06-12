@@ -1,0 +1,45 @@
+// ============================================
+// 主题配色变量 - 家庭用能管家
+// ============================================
+
+// 品牌主题色：环保绿（代表节能、环保、科技）
+$color-primary: #00B578;
+$color-primary-light: #33D49D;
+$color-primary-dark: #009966;
+$color-primary-bg: rgba(0, 181, 120, 0.08);
+
+// 功能色
+$color-success: #00B578;
+$color-warning: #FF7D00;
+$color-error: #F53F3F;
+$color-info: #165DFF;
+
+// 业务相关颜色
+$color-energy: #00B578;       // 电量/节能色
+$color-peak: #F53F3F;         // 峰时电价色
+$color-valley: #00B578;       // 谷时电价色
+$color-carbon: #165DFF;       // 碳排放色
+$color-money: #FF7D00;        // 金额色
+
+// 渐变色
+$gradient-primary: linear-gradient(135deg, #00B578 0%, #33D49D 100%);
+$gradient-energy: linear-gradient(135deg, #00B578 0%, #36CFC9 100%);
+$gradient-warning: linear-gradient(135deg, #FF7D00 0%, #FF9A2E 100%);
+$gradient-info: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+
+// 背景色
+$color-bg-page: #F2F8F5;
+$color-bg-card: #ffffff;
+$color-bg-hover: #F0F7F4;
+$color-bg-header: linear-gradient(180deg, #E6F7EF 0%, #F2F8F5 100%);
+
+// 文本色
+$color-text-primary: #1d2129;
+$color-text-secondary: #4e5969;
+$color-text-tertiary: #86909c;
+$color-text-disabled: #c9cdd4;
+$color-text-white: #ffffff;
+
+// 边框色
+$color-border: #e5e6eb;
+$color-divider: #f2f3f5;

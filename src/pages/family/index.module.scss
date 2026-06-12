@@ -1,0 +1,239 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: $spacing-xl;
+}
+
+.familyCard {
+  margin: $page-padding;
+  margin-bottom: $spacing-md;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  background: $gradient-primary;
+  color: $color-text-white;
+  box-shadow: 0 6rpx 24rpx rgba(0, 181, 120, 0.25);
+}
+
+.familyName {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.familyDesc {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: $spacing-lg;
+}
+
+.familyStats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.statItem {
+  text-align: center;
+  flex: 1;
+
+  & + & {
+    border-left: 1rpx solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+.statValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: block;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.section {
+  margin: $spacing-md $page-padding;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.addAction {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.memberList {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+}
+
+.memberItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg;
+  transition: background $transition-fast;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+
+  & + & {
+    border-top: 1rpx solid $color-divider;
+  }
+}
+
+.memberAvatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: $radius-round;
+  background: $color-primary-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+}
+
+.memberInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.memberName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.memberRole {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+}
+
+.memberGoal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.goalValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.goalProgress {
+  width: 120rpx;
+  height: 8rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.goalFill {
+  height: 100%;
+  border-radius: $radius-round;
+  background: $gradient-primary;
+}
+
+.memberArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  margin-left: $spacing-sm;
+}
+
+.roleTag {
+  display: inline-block;
+  padding: 2rpx 10rpx;
+  border-radius: $radius-sm;
+  font-size: 20rpx;
+  margin-left: $spacing-xs;
+
+  &.owner {
+    background: rgba(255, 125, 0, 0.15);
+    color: $color-warning;
+  }
+
+  &.admin {
+    background: rgba(22, 93, 255, 0.15);
+    color: $color-info;
+  }
+
+  &.member {
+    background: rgba(0, 181, 120, 0.15);
+    color: $color-primary;
+  }
+}
+
+.goalSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.goalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  & + & {
+    border-top: 1rpx solid $color-divider;
+  }
+}
+
+.goalLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.goalContent {
+  display: flex;
+  align-items: center;
+}
+
+.goalNum {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-right: $spacing-sm;
+}
+
+.goalUnit {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-right: $spacing-xs;
+}

@@ -1,0 +1,175 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.summaryCard {
+  margin: $page-padding;
+  margin-bottom: $spacing-md;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  background: $gradient-primary;
+  color: $color-text-white;
+  box-shadow: 0 6rpx 24rpx rgba(0, 181, 120, 0.25);
+}
+
+.summaryTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.summaryTitle {
+  font-size: $font-size-md;
+  opacity: 0.9;
+}
+
+.deviceCount {
+  font-size: $font-size-sm;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.powerDisplay {
+  margin-bottom: $spacing-lg;
+}
+
+.powerValue {
+  font-size: 64rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1.1;
+}
+
+.powerUnit {
+  font-size: $font-size-lg;
+  opacity: 0.9;
+  margin-left: $spacing-xs;
+}
+
+.powerLabel {
+  font-size: $font-size-sm;
+  opacity: 0.85;
+  display: block;
+  margin-top: $spacing-xs;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: space-around;
+}
+
+.statItem {
+  text-align: center;
+  flex: 1;
+
+  & + & {
+    border-left: 1rpx solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+.statValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  display: block;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.groupTabs {
+  display: flex;
+  gap: $spacing-sm;
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-md;
+  overflow-x: auto;
+  @include scroll-x-container;
+}
+
+.groupTab {
+  @include scroll-x-item(auto);
+  padding: 12rpx 28rpx;
+  border-radius: $radius-button;
+  background: $color-bg-card;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+  flex-shrink: 0;
+
+  &.active {
+    background: $color-primary;
+    color: $color-text-white;
+  }
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.deviceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 $page-padding;
+  gap: $spacing-md;
+}
+
+.deviceCard {
+  width: calc(50% - #{$spacing-md} / 2);
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: $spacing-md;
+}
+
+.addAction {
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.addAllOff {
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  background: $color-error;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
