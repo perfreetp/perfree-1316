@@ -106,12 +106,13 @@ const StrategyPage: React.FC = () => {
     const type = editingStrategy.type;
     
     if (type === 'peak_shaving') {
-      const val = formData.maxPeakPower;
-      if (!val || val.trim() === '') {
+      const raw = formData.maxPeakPower;
+      const val = String(raw ?? '').trim();
+      if (val === '') {
         return { valid: false, message: '请输入最大功率阈值' };
       }
-      const num = parseInt(val, 10);
-      if (isNaN(num)) {
+      const num = Number(val);
+      if (isNaN(num) || !Number.isFinite(num)) {
         return { valid: false, message: '请输入有效的数字' };
       }
       if (num < 500) {
@@ -141,8 +142,8 @@ const StrategyPage: React.FC = () => {
         return { valid: false, message: '放电开始和结束时间不能相同' };
       }
       
-      const minBatt = parseInt(formData.minBattery, 10);
-      const maxBatt = parseInt(formData.maxBattery, 10);
+      const minBatt = Number(formData.minBattery);
+      const maxBatt = Number(formData.maxBattery);
       if (isNaN(minBatt) || isNaN(maxBatt)) {
         return { valid: false, message: '请输入有效的电量值' };
       }
@@ -164,8 +165,8 @@ const StrategyPage: React.FC = () => {
     }
     
     if (type === 'comfort_temp') {
-      const summer = parseInt(formData.summerTemp, 10);
-      const winter = parseInt(formData.winterTemp, 10);
+      const summer = Number(formData.summerTemp);
+      const winter = Number(formData.winterTemp);
       if (isNaN(summer) || isNaN(winter)) {
         return { valid: false, message: '请输入有效的温度值' };
       }
@@ -199,7 +200,7 @@ const StrategyPage: React.FC = () => {
     switch (editingStrategy.type) {
       case 'peak_shaving':
         newConfig = {
-          maxPeakPower: parseInt(formData.maxPeakPower),
+          maxPeakPower: Math.round(Number(formData.maxPeakPower)),
           autoAdjust: !!formData.autoAdjust
         };
         break;
@@ -209,8 +210,8 @@ const StrategyPage: React.FC = () => {
           chargeEndTime: formData.chargeEndTime,
           dischargeStartTime: formData.dischargeStartTime,
           dischargeEndTime: formData.dischargeEndTime,
-          minBatteryLevel: parseInt(formData.minBattery),
-          maxBatteryLevel: parseInt(formData.maxBattery)
+          minBatteryLevel: Math.round(Number(formData.minBattery)),
+          maxBatteryLevel: Math.round(Number(formData.maxBattery))
         };
         break;
       case 'away_mode':
@@ -225,8 +226,8 @@ const StrategyPage: React.FC = () => {
         break;
       case 'comfort_temp':
         newConfig = {
-          summerTemp: parseInt(formData.summerTemp),
-          winterTemp: parseInt(formData.winterTemp),
+          summerTemp: Math.round(Number(formData.summerTemp)),
+          winterTemp: Math.round(Number(formData.winterTemp)),
           autoAdjust: !!formData.tempAutoAdjust,
           humidityControl: !!formData.humidityControl
         };
@@ -342,9 +343,13 @@ const StrategyPage: React.FC = () => {
           label: '自动检测', 
           value: strategy.config?.autoDetect ? '开启' : '手动' 
         });
+        const deviceNames: Record<string, string> = { ac: '空调', water_heater: '热水器' };
+        const turnOffNames = (strategy.config?.turnOffDevices || [])
+          .map((d: string) => deviceNames[d] || d)
+          .filter(Boolean);
         configs.push({ 
           label: '关闭设备', 
-          value: strategy.config?.turnOffDevices?.length ? `${strategy.config.turnOffDevices.length}类` : '--' 
+          value: turnOffNames.length > 0 ? turnOffNames.join('、') : '--' 
         });
         configs.push({
           label: '保留储能',

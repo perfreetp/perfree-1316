@@ -1,10 +1,35 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, Input } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 import { mockFamilyMembers, mockMonthlyBill } from '@/data/strategy';
 import { FamilyMember } from '@/types';
+
+const STORAGE_KEY = 'family_members_data';
+
+const loadPersistedMembers = (): FamilyMember[] => {
+  try {
+    const stored = Taro.getStorageSync(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('[Family] Failed to load persisted data:', e);
+  }
+  return [...mockFamilyMembers];
+};
+
+const persistMembers = (members: FamilyMember[]) => {
+  try {
+    Taro.setStorageSync(STORAGE_KEY, JSON.stringify(members));
+  } catch (e) {
+    console.warn('[Family] Failed to persist data:', e);
+  }
+};
 
 const FamilyPage: React.FC = () => {
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -13,18 +38,26 @@ const FamilyPage: React.FC = () => {
   const [editField, setEditField] = useState<'role' | 'goal' | 'familyGoal' | null>(null);
   const [tempValue, setTempValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const initializedRef = useRef(false);
 
   useDidShow(() => {
-    console.log('[Family] Page did show, reloading data');
-    setIsLoading(true);
-    setTimeout(() => {
-      setMembers([...mockFamilyMembers]);
-      setIsLoading(false);
-    }, 50);
+    console.log('[Family] Page did show');
+    if (!initializedRef.current) {
+      setIsLoading(true);
+      setTimeout(() => {
+        const persisted = loadPersistedMembers();
+        setMembers(persisted);
+        setIsLoading(false);
+        initializedRef.current = true;
+      }, 50);
+    }
   });
 
-  const currentMonthBill = mockMonthlyBill[mockMonthlyBill.length - 1];
-  
+  const currentMonthEnergy = useMemo(() => {
+    if (!mockMonthlyBill || mockMonthlyBill.length === 0) return 0;
+    return mockMonthlyBill[mockMonthlyBill.length - 1]?.energy || 0;
+  }, []);
+
   const totalGoal = useMemo(() => {
     if (!members || members.length === 0) return 0;
     return members.reduce((sum, m) => sum + (m.energyGoal || 0), 0);
@@ -32,14 +65,22 @@ const FamilyPage: React.FC = () => {
 
   const goalPercent = useMemo(() => {
     if (totalGoal <= 0) return 0;
-    return Math.min((currentMonthBill.energy / totalGoal) * 100, 100);
-  }, [currentMonthBill.energy, totalGoal]);
+    return Math.min((currentMonthEnergy / totalGoal) * 100, 100);
+  }, [currentMonthEnergy, totalGoal]);
+
+  const updateMembers = (updater: (prev: FamilyMember[]) => FamilyMember[]) => {
+    setMembers(prev => {
+      const next = updater(prev);
+      persistMembers(next);
+      return next;
+    });
+  };
 
   const validateGoalValue = (value: string, field: string): { valid: boolean; message?: string; numValue?: number } => {
-    if (!value || value.trim() === '') {
+    if (!value || (typeof value === 'string' && value.trim() === '')) {
       return { valid: false, message: '请输入数值' };
     }
-    const numValue = parseInt(value, 10);
+    const numValue = parseInt(String(value), 10);
     if (isNaN(numValue)) {
       return { valid: false, message: '请输入有效的数字' };
     }
@@ -78,17 +119,11 @@ const FamilyPage: React.FC = () => {
   };
 
   const handleMemberClick = (member: FamilyMember) => {
-    console.log('[Family] Click member:', member.name);
     Taro.showActionSheet({
       itemList: ['修改权限', '设置用电目标', '移除成员'],
       success: (res) => {
-        console.log('[Family] Selected action:', res.tapIndex);
         if (member.role === 'owner' && (res.tapIndex === 0 || res.tapIndex === 2)) {
-          Taro.showToast({
-            title: '户主权限不可修改',
-            icon: 'none',
-            duration: 1500
-          });
+          Taro.showToast({ title: '户主权限不可修改', icon: 'none', duration: 1500 });
           return;
         }
         if (res.tapIndex === 0) {
@@ -103,30 +138,19 @@ const FamilyPage: React.FC = () => {
   };
 
   const handleEditRole = (member: FamilyMember) => {
-    console.log('[Family] Edit role for:', member.name);
     Taro.showActionSheet({
       itemList: ['管理员', '普通成员'],
       success: (res) => {
         const newRole = res.tapIndex === 0 ? 'admin' : 'member';
-        setMembers(prev =>
-          prev.map(m => {
-            if (m.id === member.id) {
-              return { ...m, role: newRole as any };
-            }
-            return m;
-          })
+        updateMembers(prev =>
+          prev.map(m => m.id === member.id ? { ...m, role: newRole as any } : m)
         );
-        Taro.showToast({
-          title: `已改为${newRole === 'admin' ? '管理员' : '普通成员'}`,
-          icon: 'success',
-          duration: 1500
-        });
+        Taro.showToast({ title: `已改为${newRole === 'admin' ? '管理员' : '普通成员'}`, icon: 'success', duration: 1500 });
       }
     });
   };
 
   const handleEditGoal = (member: FamilyMember) => {
-    console.log('[Family] Edit goal for:', member.name);
     setEditingMember(member);
     setTempValue(String(member.energyGoal || 100));
     setEditField('goal');
@@ -134,25 +158,19 @@ const FamilyPage: React.FC = () => {
   };
 
   const handleRemoveMember = (member: FamilyMember) => {
-    console.log('[Family] Remove member:', member.name);
     Taro.showModal({
       title: '确认移除',
       content: `确定要移除成员"${member.name}"吗？`,
       success: (res) => {
         if (res.confirm) {
-          setMembers(prev => prev.filter(m => m.id !== member.id));
-          Taro.showToast({
-            title: '已移除成员',
-            icon: 'success',
-            duration: 1500
-          });
+          updateMembers(prev => prev.filter(m => m.id !== member.id));
+          Taro.showToast({ title: '已移除成员', icon: 'success', duration: 1500 });
         }
       }
     });
   };
 
   const handleAddMember = () => {
-    console.log('[Family] Add member');
     Taro.showModal({
       title: '添加成员',
       editable: true,
@@ -167,18 +185,10 @@ const FamilyPage: React.FC = () => {
               role: 'member',
               energyGoal: 100
             };
-            setMembers(prev => [...prev, newMember]);
-            Taro.showToast({
-              title: '成员已添加',
-              icon: 'success',
-              duration: 1500
-            });
+            updateMembers(prev => [...prev, newMember]);
+            Taro.showToast({ title: '成员已添加', icon: 'success', duration: 1500 });
           } else {
-            Taro.showToast({
-              title: '昵称不能为空',
-              icon: 'none',
-              duration: 1500
-            });
+            Taro.showToast({ title: '昵称不能为空', icon: 'none', duration: 1500 });
           }
         }
       }
@@ -186,44 +196,28 @@ const FamilyPage: React.FC = () => {
   };
 
   const handleGoalClick = () => {
-    console.log('[Family] Edit family goal');
     setEditField('familyGoal');
     setTempValue(String(totalGoal || 500));
     setShowEditModal(true);
   };
 
   const handleConfirmEdit = () => {
-    console.log('[Family] Confirm edit, field:', editField, 'value:', tempValue);
-    
     const validation = validateGoalValue(tempValue, editField || '');
     if (!validation.valid) {
-      Taro.showToast({
-        title: validation.message || '输入无效',
-        icon: 'none',
-        duration: 2000
-      });
+      Taro.showToast({ title: validation.message || '输入无效', icon: 'none', duration: 2000 });
       return;
     }
     
     const goalValue = validation.numValue!;
 
     if (editField === 'goal' && editingMember) {
-      setMembers(prev =>
-        prev.map(m => {
-          if (m.id === editingMember.id) {
-            return { ...m, energyGoal: goalValue };
-          }
-          return m;
-        })
+      updateMembers(prev =>
+        prev.map(m => m.id === editingMember.id ? { ...m, energyGoal: goalValue } : m)
       );
-      Taro.showToast({
-        title: '目标已更新',
-        icon: 'success',
-        duration: 1500
-      });
+      Taro.showToast({ title: '目标已更新', icon: 'success', duration: 1500 });
     } else if (editField === 'familyGoal') {
       const avgGoal = Math.ceil(goalValue / Math.max(members.length, 1));
-      setMembers(prev =>
+      updateMembers(prev =>
         prev.map(m => {
           if (m.role === 'owner' || m.role === 'admin') {
             return { ...m, energyGoal: Math.ceil(avgGoal * 1.2) };
@@ -231,11 +225,7 @@ const FamilyPage: React.FC = () => {
           return { ...m, energyGoal: avgGoal };
         })
       );
-      Taro.showToast({
-        title: '家庭目标已更新',
-        icon: 'success',
-        duration: 1500
-      });
+      Taro.showToast({ title: '家庭目标已更新', icon: 'success', duration: 1500 });
     }
     
     setShowEditModal(false);
@@ -259,7 +249,7 @@ const FamilyPage: React.FC = () => {
 
   const getMemberGoalPercent = (member: FamilyMember) => {
     const goal = member.energyGoal || 1;
-    const memberUsage = currentMonthBill.energy / Math.max(members.length, 1);
+    const memberUsage = currentMonthEnergy / Math.max(members.length, 1);
     return Math.min((memberUsage / goal) * 100, 100);
   };
 
@@ -282,7 +272,7 @@ const FamilyPage: React.FC = () => {
           
           <View className={styles.familyStats}>
             <View className={styles.statItem}>
-              <Text className={styles.statValue}>{currentMonthBill.energy.toFixed(0)}</Text>
+              <Text className={styles.statValue}>{currentMonthEnergy.toFixed(0)}</Text>
               <Text className={styles.statLabel}>本月用电(kWh)</Text>
             </View>
             <View className={styles.statItem}>
